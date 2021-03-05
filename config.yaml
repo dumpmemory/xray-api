@@ -21,6 +21,6 @@ xray:
     # method: aes-128-gcm # aes-128-gcm|aes-256-gcm|chacha20-ietf-poly1305
     # network: tcp,udp # tcp|udp|tcp,udp
 
-    grpcPort: 10085
+    grpcPort: 10086
     
 debug: false

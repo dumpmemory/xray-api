@@ -35,7 +35,6 @@ const tplstr = `{
         },
         {
             "tag": "vryusers",
-            "listen":"127.0.0.1",
             "port": {{.port}},
             "protocol": "{{.protocol}}",
             
