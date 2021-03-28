@@ -1,5 +1,5 @@
 #!/bin/sh
-wget https://github.com/XTLS/Xray-core/releases/download/v1.3.1/Xray-linux-64.zip
+wget https://github.com/XTLS/Xray-core/releases/download/v1.4.0/Xray-linux-64.zip
 unzip -o Xray-linux-64.zip -d xray-core
 rm Xray-linux-64.zip
 go mod download

@@ -120,7 +120,9 @@ func Traffic(reset bool) (res map[string]uint64) {
 		}
 	}
 	for _, user := range users {
-		res[user.Uuid] = eres[user.Email]
+		if eres[user.Email] > 0 {
+			res[user.Uuid] = eres[user.Email]
+		}
 	}
 	return
 }
