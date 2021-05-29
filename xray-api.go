@@ -59,7 +59,7 @@ func main() {
 	r.POST("/delUser", action.DelUser())
 	r.POST("/traffic", action.Traffic())
 	r.POST("/restart", action.Restart())
-	r.POST("/status", action.Status())
+	r.POST("/stat", action.Stat())
 
 	var address string
 
@@ -73,14 +73,10 @@ func main() {
 	fmt.Println("KEY:", accessKey)
 	_ = r.Run(address)
 }
-
 func webMiddleware(c *gin.Context) {
-	if c.PostForm("key") == "" {
-		utils.RespondWithError(401, "API token required", c)
-		return
-	}
-	if c.PostForm("key") != accessKey {
-		utils.RespondWithError(403, "API token incorrect", c)
+	if c.Request.Header.Get("key") != accessKey {
+		utils.RespondWithError(500, "Api key Incorrect", c)
+		c.Abort()
 		return
 	}
 	c.Next()
