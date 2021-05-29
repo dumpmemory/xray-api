@@ -2,6 +2,7 @@ package api
 
 import (
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -106,16 +107,8 @@ const tplstr = `{
             "settings": {},
             "tag": "blocked"
         }
-    ],
-    "dns": {
-        "servers": [
-            "223.5.5.5","119.29.29.29",
-            "1.0.0.1","8.8.4.4",
-            "1.1.1.1","8.8.8.8",
-            "https+local://cloudflare-dns.com/dns-query",
-            "localhost"
-        ]
-    },
+    ]
+    {{if .dns}},"dns": {"servers": {{.dns}}}{{end}},
     "routing": {
         "domainStrategy": "AsIs",
         "settings": {
@@ -124,22 +117,20 @@ const tplstr = `{
                     "type": "field",
                     "inboundTag": ["api"],
                     "outboundTag": "api"
-                },
-                {
+                }{{if .blockDomains}},{
                     "type": "field",
-                    "ip": ["0.0.0.0/8","10.0.0.0/8","100.64.0.0/10","127.0.0.0/8","169.254.0.0/16","172.16.0.0/12","192.0.0.0/24","192.0.2.0/24","192.168.0.0/16","198.18.0.0/15","198.51.100.0/24","203.0.113.0/24","::1/128","fc00::/7","fe80::/10"],
+                    "ip": {{.blockIps}},
                     "outboundTag": "blocked"
-                },
-                {
+                }{{end}}{{if .blockDomains}},{
                     "type": "field",
-                    "domain": ["domain:epochtimes.com","domain:epochtimes.com.tw","domain:epochtimes.fr","domain:epochtimes.de","domain:epochtimes.jp","domain:epochtimes.ru","domain:epochtimes.co.il","domain:epochtimes.co.kr","domain:epochtimes-romania.com","domain:erabaru.net","domain:lagranepoca.com","domain:theepochtimes.com","domain:ntdtv.com","domain:ntd.tv","domain:ntdtv-dc.com","domain:ntdtv.com.tw","domain:minghui.org","domain:renminbao.com","domain:dafahao.com","domain:dongtaiwang.com","domain:falundafa.org","domain:wujieliulan.com","domain:ninecommentaries.com","domain:shenyun.com"],
+                    "domain": {{.blockDomains}},
                     "outboundTag": "blocked"
-                },
+                }{{end}}{{if .blockBt}},
                 {
                     "type": "field",
                     "protocol": ["bittorrent"],
                     "outboundTag": "blocked"
-                }
+                }{{end}}
             ]
         },
         "strategy": "rules"
@@ -155,6 +146,28 @@ const tplstr = `{
 `
 
 func WriteConfig(xray map[interface{}]interface{}, path string) (err error) {
+	if xray["dns"] != nil {
+		var dns []string
+		for _, x := range xray["dns"].([]interface{}) {
+			dns = append(dns, `"`+x.(string)+`"`)
+		}
+		xray["dns"] = "[" + strings.Join(dns, ",") + "]"
+	}
+	if xray["blockIps"] != nil {
+		var blockIps []string
+		for _, x := range xray["blockIps"].([]interface{}) {
+			blockIps = append(blockIps, `"`+x.(string)+`"`)
+		}
+		xray["blockIps"] = "[" + strings.Join(blockIps, ",") + "]"
+	}
+	if xray["blockDomains"] != nil {
+		var blockDomains []string
+		for _, x := range xray["blockDomains"].([]interface{}) {
+			blockDomains = append(blockDomains, `"domain:`+x.(string)+`"`)
+		}
+		xray["blockDomains"] = "[" + strings.Join(blockDomains, ",") + "]"
+	}
+
 	f, _ := os.Create(path)
 	tpl, _ := template.New("config").Parse(tplstr)
 	err = tpl.Execute(f, xray)
