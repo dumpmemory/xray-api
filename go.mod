@@ -13,7 +13,7 @@ require (
 	github.com/lucas-clemente/quic-go v0.20.1 // indirect
 	github.com/marten-seemann/qtls v0.10.0 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
-	github.com/shirou/gopsutil v3.21.4+incompatible // indirect
+	github.com/shirou/gopsutil v3.21.4+incompatible
 	github.com/tklauser/go-sysconf v0.3.6 // indirect
 	github.com/ugorji/go v1.2.6 // indirect
 	github.com/xtls/xray-core v1.4.2
