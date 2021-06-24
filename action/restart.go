@@ -38,19 +38,17 @@ func restart() (err error) {
 	return
 }
 
-func Restart() func(c *gin.Context) {
-	return func(c *gin.Context) {
-		err := restart()
-		var success = false
-		var msg string
-		if err == nil {
-			success = true
-		} else {
-			msg = err.Error()
-		}
-		c.JSON(200, gin.H{
-			"success": success,
-			"msg":     msg,
-		})
+func Restart(c *gin.Context) {
+	err := restart()
+	var success = false
+	var msg string
+	if err == nil {
+		success = true
+	} else {
+		msg = err.Error()
 	}
+	c.JSON(200, gin.H{
+		"success": success,
+		"msg":     msg,
+	})
 }

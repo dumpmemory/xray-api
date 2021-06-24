@@ -53,13 +53,14 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
+	r.Any("/ping", action.Ping)
 	r.Use(webMiddleware)
 	r.POST("/sync", action.Sync())
-	r.POST("/addUser", action.AddUser())
-	r.POST("/delUser", action.DelUser())
-	r.POST("/traffic", action.Traffic())
-	r.POST("/restart", action.Restart())
-	r.POST("/stat", action.Stat())
+	r.POST("/addUser", action.AddUser)
+	r.POST("/delUser", action.DelUser)
+	r.POST("/traffic", action.Traffic)
+	r.POST("/restart", action.Restart)
+	r.POST("/stat", action.Stat)
 
 	var address string
 
