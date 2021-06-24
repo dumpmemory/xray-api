@@ -6,5 +6,5 @@ import (
 
 func Ping(c *gin.Context) {
 	c.Writer.WriteString("pong")
-	c.Writer.Flush()
+    c.Done()
 }
