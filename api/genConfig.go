@@ -1,9 +1,10 @@
 package api
 
 import (
-	"os"
-	"strings"
+	"encoding/json"
+	"io"
 	"text/template"
+	"xray-api/config"
 )
 
 const tplstr = `{
@@ -30,45 +31,44 @@ const tplstr = `{
         {
             "tag": "api",
             "listen":"127.0.0.1",
-            "port": {{.grpcPort}},
+            "port": {{.GrpcPort}},
             "protocol": "dokodemo-door",
             "settings": {"address": "127.0.0.1"}
         },
         {
             "tag": "vryusers",
-            "port": {{.port}},
-            "protocol": "{{.protocol}}",
-            
-        {{if eq .protocol "vmess"}}
+            "port": {{.Port}},
+            "protocol": "{{.Protocol}}",            
+        {{if eq .Protocol "vmess"}}
             "settings": {"clients": []},
-            {{if eq .type "ws"}}
+            {{if eq .Type "ws"}}
                 "streamSettings": {
                     "network": "ws",
                     "security": "none",
-                    "wsSettings": {"path": "{{.path}}"},
+                    "wsSettings": {"path": "{{.Path}}"},
                     "sockopt": {"mark": 0,"tcpFastOpen": true,"tproxy": "off"}
                 },
-            {{else if eq .type "tcp"}}
+            {{else if eq .Type "tcp"}}
                 "streamSettings": {
                     "network": "tcp",
-                    "security": {{if .tls}}"tls"{{else}}"none"{{end}},
-                    {{if .tls}}
+                    "security": {{if .Tls}}"tls"{{else}}"none"{{end}},
+                    {{if .Tls}}
                     "tlsSettings": {
                         "certificates": [{
-                            "certificateFile": "{{.certificateFile}}",
-                            "keyFile": "{{.keyFile}}"
+                            "certificateFile": "{{.CertificateFile}}",
+                            "keyFile": "{{.KeyFile}}"
                         }]
                     },
                     {{end}}
                     "tcpSettings": {}
                 },
             {{end}}
-        {{else if eq .protocol "shadowsocks"}}
+        {{else if eq .Protocol "shadowsocks"}}
             "settings":{
                 "clients": [],
-                "network": "{{.network}}"
+                "network": "{{.Network}}"
             },
-		{{else if eq .protocol "trojan"}}
+		{{else if eq .Protocol "trojan"}}
 			"settings": {"clients": []},
             "streamSettings": {
                 "network": "tcp",
@@ -76,13 +76,12 @@ const tplstr = `{
                 "tlsSettings": {
                     "alpn": ["http/1.1"],
                     "certificates": [{
-						"certificateFile": "{{.certificateFile}}",
-						"keyFile": "{{.keyFile}}"
+						"certificateFile": "{{.CertificateFile}}",
+						"keyFile": "{{.KeyFile}}"
 					}]
                 }
             }
-        {{end}}
-		
+        {{end}}		
             "sniffing": {
                 "enabled": true,
                 "destOverride": ["http","tls"]
@@ -108,7 +107,7 @@ const tplstr = `{
             "tag": "blocked"
         }
     ]
-    {{if .dns}},"dns": {"servers": {{.dns}}}{{end}},
+    {{if gt (len .Dns) 0}},"dns": {"servers": {{js .Dns}}}{{end}},
     "routing": {
         "domainStrategy": "AsIs",
         "settings": {
@@ -117,15 +116,15 @@ const tplstr = `{
                     "type": "field",
                     "inboundTag": ["api"],
                     "outboundTag": "api"
-                }{{if .blockDomains}},{
+                }{{if gt (len .Block.Ips) 0}},{
                     "type": "field",
-                    "ip": {{.blockIps}},
+                    "ip": {{js .Block.Ips}},
                     "outboundTag": "blocked"
-                }{{end}}{{if .blockDomains}},{
+                }{{end}}{{if gt (len .Block.Domains) 0}},{
                     "type": "field",
-                    "domain": {{.blockDomains}},
+                    "domain": {{js .Block.Domains}},
                     "outboundTag": "blocked"
-                }{{end}}{{if .blockBt}},
+                }{{end}}{{if .Block.BT}},
                 {
                     "type": "field",
                     "protocol": ["bittorrent"],
@@ -145,31 +144,38 @@ const tplstr = `{
 }
 `
 
-func WriteConfig(xray map[interface{}]interface{}, path string) (err error) {
-	if xray["dns"] != nil {
-		var dns []string
-		for _, x := range xray["dns"].([]interface{}) {
-			dns = append(dns, `"`+x.(string)+`"`)
-		}
-		xray["dns"] = "[" + strings.Join(dns, ",") + "]"
+func JS(data interface{}) string {
+	js, err := json.Marshal(data)
+	if err != nil {
+		return ""
+	} else {
+		return string(js)
 	}
-	if xray["blockIps"] != nil {
-		var blockIps []string
-		for _, x := range xray["blockIps"].([]interface{}) {
-			blockIps = append(blockIps, `"`+x.(string)+`"`)
-		}
-		xray["blockIps"] = "[" + strings.Join(blockIps, ",") + "]"
-	}
-	if xray["blockDomains"] != nil {
-		var blockDomains []string
-		for _, x := range xray["blockDomains"].([]interface{}) {
-			blockDomains = append(blockDomains, `"domain:`+x.(string)+`"`)
-		}
-		xray["blockDomains"] = "[" + strings.Join(blockDomains, ",") + "]"
-	}
+}
+func WriteConfig(xray config.XRAY, wr io.Writer) (err error) {
+	// if xray.Dns != nil {
+	// 	var dns []string
+	// 	for _, x := range xray["dns"].([]interface{}) {
+	// 		dns = append(dns, `"`+x.(string)+`"`)
+	// 	}
+	// 	xray["dns"] = "[" + strings.Join(dns, ",") + "]"
+	// }
+	// if xray["blockIps"] != nil {
+	// 	var blockIps []string
+	// 	for _, x := range xray["blockIps"].([]interface{}) {
+	// 		blockIps = append(blockIps, `"`+x.(string)+`"`)
+	// 	}
+	// 	xray["blockIps"] = "[" + strings.Join(blockIps, ",") + "]"
+	// }
+	// if xray["blockDomains"] != nil {
+	// 	var blockDomains []string
+	// 	for _, x := range xray["blockDomains"].([]interface{}) {
+	// 		blockDomains = append(blockDomains, `"domain:`+x.(string)+`"`)
+	// 	}
+	// 	xray["blockDomains"] = "[" + strings.Join(blockDomains, ",") + "]"
+	// }
 
-	f, _ := os.Create(path)
-	tpl, _ := template.New("config").Parse(tplstr)
-	err = tpl.Execute(f, xray)
+	tpl, _ := template.New("config").Funcs(template.FuncMap{"js": JS}).Parse(tplstr)
+	err = tpl.Execute(wr, xray)
 	return
 }

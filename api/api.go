@@ -1,66 +1,60 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"log"
 	"regexp"
+	"xray-api/config"
+
+	cmap "github.com/orcaman/concurrent-map"
 )
 
 var (
-	users      = map[string]UserData{}
-	APIAddress = "127.0.0.1"
-	APIPort    = uint16(10085)
+	Config     config.CONF
+	Protocol   string
+	users      = cmap.New()
 	InbountTag = "vryusers"
-	Protocol   = "vmess"
-	SSMethod   = "aes-256-gcm"
 	xrayCtl    *XrayController
 )
 
-func Init(grpcAddress string, grpcPort uint16, protocol string) (err error) {
-	APIAddress = grpcAddress
-	APIPort = grpcPort
-	Protocol = protocol
-	var (
-		cfg = &BaseConfig{
-			APIAddress: APIAddress,
-			APIPort:    APIPort,
-		}
-	)
+func Init() (err error) {
+	Protocol = Config.Xray.Protocol
 	xrayCtl = new(XrayController)
-	err = xrayCtl.Init(cfg)
+	err = xrayCtl.Init(&BaseConfig{
+		APIAddress: "127.0.0.1",
+		APIPort:    uint16(Config.Xray.Grpc),
+	})
 	if err != nil {
 		return
 	}
 	return
 }
 
-func SetSSmethod(method string) (err error) {
-	SSMethod = method
-	return
-}
-
-type UserData struct {
+type User struct {
 	Uuid  string `json:"uuid"`
 	Email string `json:"email"`
 }
 
-func ToUser(Uuid string, Email string) UserData {
-	return UserData{Uuid: Uuid, Email: Email}
-}
-func toXuser(user UserData) UserInfo {
+func Xuser(uuid, email string) UserInfo {
 	return UserInfo{
-		Uuid:       user.Uuid,
-		Email:      user.Email,
-		Password:   user.Uuid,
+		Uuid:       uuid,
+		Email:      email,
+		Password:   uuid,
 		AlertId:    0,
 		Level:      0,
 		InTag:      InbountTag,
-		CipherType: SSMethod,
+		CipherType: Config.Xray.Method,
 	}
 }
 
 func AddUser(Uuid string, Email string) (err error) {
-	user := ToUser(Uuid, Email)
-	xuser := toXuser(user)
+	user := User{
+		Uuid:  Uuid,
+		Email: Email,
+	}
+	xuser := Xuser(Uuid, Email)
 	if Protocol == "vmess" || Protocol == "vless" {
 		err = addVmessUser(xrayCtl.HsClient, &xuser)
 	} else if Protocol == "shadowsocks" {
@@ -70,28 +64,28 @@ func AddUser(Uuid string, Email string) (err error) {
 	}
 
 	if err == nil {
-		users[Uuid] = user
+		users.Set(Uuid, user)
 	}
 	return
 }
 func RemoveUser(Uuid string) (err error) {
-	user, has := users[Uuid]
+	user, has := users.Get(Uuid)
 	if !has {
-		errors.New("user not found")
+		return errors.New("user not found")
 	}
-	xuser := toXuser(user)
+	xuser := Xuser(Uuid, user.(User).Email)
 	err = removeUser(xrayCtl.HsClient, &xuser)
 	if err == nil {
-		delete(users, Uuid)
+		users.Remove(Uuid)
 	}
 	return err
 }
-func Sync(newUsers *[]UserData) map[string]UserData {
-	S := make(map[string]UserData)
+func Sync(newUsers *[]User) map[string]interface{} {
+	S := make(map[string]User)
 	for _, user := range *newUsers {
 		S[user.Uuid] = user
 	}
-	for Uuid := range users {
+	for _, Uuid := range users.Keys() {
 		_, has := S[Uuid]
 		if has {
 			delete(S, Uuid)
@@ -102,15 +96,30 @@ func Sync(newUsers *[]UserData) map[string]UserData {
 	for _, user := range S {
 		AddUser(user.Uuid, user.Email)
 	}
-	return users
+	Users := users.Items()
+	if Config.Syncfile != "" {
+		data, err := json.MarshalIndent(Users, "", "    ")
+		if err == nil {
+			err = ioutil.WriteFile(Config.Syncfile, data, 0644)
+		}
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	return Users
 }
-func Traffic(reset bool) (res map[string]uint64) {
-	res = make(map[string]uint64)
+func ReAddUsers() {
+	for _, user := range users.Items() {
+		AddUser(user.(User).Uuid, user.(User).Email)
+	}
+}
+func Traffic(reset bool) map[string]uint64 {
+	res := make(map[string]uint64)
 	eres := make(map[string]uint64)
 	ptn := ""
 	stats, err := queryTraffic(xrayCtl.SsClient, ptn, reset)
 	if err != nil {
-		return
+		return res
 	}
 	Reg := regexp.MustCompile(`user>>>([^>]+)>>>traffic>>>([^>]+)link`)
 	for _, stat := range stats {
@@ -119,10 +128,11 @@ func Traffic(reset bool) (res map[string]uint64) {
 			eres[match[1]] += uint64(stat.Value)
 		}
 	}
-	for _, user := range users {
-		if eres[user.Email] > 0 {
-			res[user.Uuid] = eres[user.Email]
+	for uuid, user := range users.Items() {
+		traffic, has := eres[user.(User).Email]
+		if has && traffic > 0 {
+			res[uuid] = traffic
 		}
 	}
-	return
+	return res
 }
