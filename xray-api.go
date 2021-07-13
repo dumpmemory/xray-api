@@ -36,7 +36,7 @@ func main() {
 	fmt.Println("PROTOCOL:", xray.Protocol)
 	fmt.Println("PORT:", xray.Port)
 	fmt.Println("GRPC:", xray.Grpc)
-	// api.WriteConfig(xray, currentPath+"xray-core/config.json")
+
 	action.Xray = xray
 	action.Start()
 
@@ -58,7 +58,7 @@ func main() {
 	}
 	r := gin.New()
 	r.Any("/ping", action.Ping)
-	r.GET("/online", action.IsOnline)
+	r.Any("/online", action.IsOnline)
 	r.Use(webMiddleware)
 	r.POST("/sync", action.Sync)
 	r.POST("/addUser", action.AddUser)

@@ -37,6 +37,8 @@ func Start() error {
 	if err != nil {
 		return err
 	}
+	// f, _ := os.Create("./config.json")
+	// api.WriteConfig(Xray, f)
 	err = api.WriteConfig(Xray, stdin)
 	if err != nil {
 		return err

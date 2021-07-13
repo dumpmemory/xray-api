@@ -31,7 +31,7 @@ const tplstr = `{
         {
             "tag": "api",
             "listen":"127.0.0.1",
-            "port": {{.GrpcPort}},
+            "port": {{.Grpc}},
             "protocol": "dokodemo-door",
             "settings": {"address": "127.0.0.1"}
         },
