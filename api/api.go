@@ -65,6 +65,8 @@ func AddUser(Uuid string, Email string) (err error) {
 
 	if err == nil {
 		users.Set(Uuid, user)
+	} else {
+		log.Println(err)
 	}
 	return
 }
@@ -80,11 +82,14 @@ func RemoveUser(Uuid string) (err error) {
 	}
 	return err
 }
-func Sync(newUsers *[]User) map[string]interface{} {
+func Sync(newUsers []User) map[string]interface{} {
 	S := make(map[string]User)
-	for _, user := range *newUsers {
+	for _, user := range newUsers {
 		S[user.Uuid] = user
 	}
+	return SyncS(S)
+}
+func SyncS(S map[string]User) map[string]interface{} {
 	for _, Uuid := range users.Keys() {
 		_, has := S[Uuid]
 		if has {
@@ -98,7 +103,7 @@ func Sync(newUsers *[]User) map[string]interface{} {
 	}
 	Users := users.Items()
 	if Config.Syncfile != "" {
-		data, err := json.MarshalIndent(Users, "", "    ")
+		data, err := json.Marshal(Users)
 		if err == nil {
 			err = ioutil.WriteFile(Config.Syncfile, data, 0644)
 		}

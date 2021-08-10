@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"time"
 	"xray-api/action"
 	"xray-api/api"
 	"xray-api/config"
@@ -47,9 +48,10 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			var users []api.User
+			var users map[string]api.User
 			json.Unmarshal(data, &users)
-			api.Sync(&users)
+			time.Sleep(3000 * time.Millisecond)
+			api.SyncS(users)
 		}
 	}
 

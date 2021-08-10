@@ -15,7 +15,7 @@ func Sync(c *gin.Context) {
 		utils.RespondWithError(500, "Couldn't parse JSON data", c)
 		return
 	}
-	res := api.Sync(&newUsers)
+	res := api.Sync(newUsers)
 	c.JSON(200, gin.H{
 		"success": true,
 		"msg":     res,

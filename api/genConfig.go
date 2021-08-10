@@ -7,7 +7,7 @@ import (
 	"xray-api/config"
 )
 
-const tplstr = `{
+var tplstr = `{
     "log": {
         "loglevel": "error"
     },
