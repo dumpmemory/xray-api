@@ -28,4 +28,4 @@ xray:
         domains: ["epochtimes.com","epochtimes.com.tw","epochtimes.fr","epochtimes.de","epochtimes.jp","epochtimes.ru","epochtimes.co.il","epochtimes.co.kr","epochtimes-romania.com","domain:erabaru.net","domain:lagranepoca.com","domain:theepochtimes.com","domain:ntdtv.com","domain:ntd.tv","domain:ntdtv-dc.com","domain:ntdtv.com.tw","domain:minghui.org","renminbao.com","dafahao.com","dongtaiwang.com","falundafa.org","wujieliulan.com","ninecommentaries.com","shenyun.com"]
     autoRestart: true
 syncfile: users.json
-debug: false
+# debug: true

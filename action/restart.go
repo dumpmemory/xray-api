@@ -1,6 +1,7 @@
 package action
 
 import (
+	"os"
 	"os/exec"
 	"xray-api/api"
 	"xray-api/config"
@@ -10,6 +11,7 @@ import (
 )
 
 var (
+	Debug  bool
 	Cmd    exec.Cmd
 	Xray   config.XRAY
 	Online bool
@@ -31,8 +33,10 @@ func Start() error {
 	if err != nil {
 		return err
 	}
-	// Cmd.Stdout = os.Stdout
-	// Cmd.Stderr = os.Stderr
+	if Debug {
+		Cmd.Stdout = os.Stdout
+		Cmd.Stderr = os.Stderr
+	}
 	err = Cmd.Start()
 	if err != nil {
 		return err

@@ -38,6 +38,11 @@ func main() {
 	fmt.Println("PORT:", xray.Port)
 	fmt.Println("GRPC:", xray.Grpc)
 
+	if Config.Debug {
+		action.Debug = true
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	action.Xray = xray
 	action.Start()
 
@@ -53,10 +58,6 @@ func main() {
 			time.Sleep(3000 * time.Millisecond)
 			api.SyncS(users)
 		}
-	}
-
-	if !Config.Debug {
-		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
 	r.Any("/ping", action.Ping)
